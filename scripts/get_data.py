@@ -1,5 +1,9 @@
 import yfinance as yf
 
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parent.parent  # repository root
+
 # The four coins, as Yahoo Finance names them
 tickers = ["BTC-USD", "ETH-USD", "SOL-USD", "DOGE-USD"]
 
@@ -16,4 +20,4 @@ print(prices.shape)          # (number of rows, number of columns)
 print(prices.isna().sum())   # missing values per coin
 
 # Save to a file so we don't have to re-download
-prices.to_csv("prices_hourly.csv")
+prices.to_csv(ROOT / "data" / "hourly" / "prices_hourly.csv")

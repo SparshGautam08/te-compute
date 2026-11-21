@@ -3,7 +3,7 @@ Minute-level version of the transfer entropy experiment.
 
 Runs the whole pipeline in one go, on 1-minute prices instead of hourly:
   1. Download 1-minute closing prices (BTC, ETH, SOL, DOGE) from Yahoo Finance
-  2. Clean them and convert to log returns (same steps as prepare.py)
+  2. Clean them and convert to log returns (same steps as prepare_data.py)
   3. Count ties and add tiny tie-breaking noise (Kraskov et al. 2004)
   4. Same-minute correlations
   5. Transfer entropy for all 12 directed pairs, with a shuffle test
@@ -11,7 +11,7 @@ Runs the whole pipeline in one go, on 1-minute prices instead of hourly:
 Note: Yahoo only serves about the last week of 1-minute data, so this is a
 short window (~10,000 minutes). Treat the results as a preliminary check.
 
-Run with:  python minute_experiment.py
+Run from the repository root with:  python scripts/minute_experiment.py
 """
 
 import itertools
@@ -20,6 +20,10 @@ import numpy as np
 import pandas as pd
 import yfinance as yf
 from PyIF import te_compute as te
+
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parent.parent  # repository root
 
 # ---------------- Settings ----------------
 TICKERS = ["BTC-USD", "ETH-USD", "SOL-USD", "DOGE-USD"]
@@ -36,7 +40,7 @@ prices = data["Close"]
 print("Downloaded:", prices.shape, "from", prices.index.min(), "to", prices.index.max())
 print("Blank prices per coin:")
 print(prices.isna().sum())
-prices.to_csv("prices_minute.csv")
+prices.to_csv(ROOT / "data" / "minute" / "prices_minute.csv")
 
 # ---------------- 2. Clean and convert to log returns ----------------
 # Drop the last row: the current minute isn't finished yet
@@ -56,7 +60,7 @@ print(f"Dropped {n_dropped} of {n_possible} returns "
       f"({100 * n_dropped / n_possible:.2f}%) because of gaps or blanks")
 print("Final dataset:", returns.shape)
 print(returns.describe())
-returns.to_csv("returns_minute.csv")
+returns.to_csv(ROOT / "data" / "minute" / "returns_minute.csv")
 
 # ---------------- 3. Ties and tie-breaking noise ----------------
 print("\nMinutes with exactly zero return:")
@@ -66,7 +70,7 @@ print(returns.apply(lambda col: col.duplicated().sum()))
 
 rng = np.random.default_rng(42)
 returns_jittered = returns + rng.normal(0, NOISE_SD, size=returns.shape)
-returns_jittered.to_csv("returns_minute_jittered.csv")
+returns_jittered.to_csv(ROOT / "data" / "minute" / "returns_minute_jittered.csv")
 
 # ---------------- 4. Same-minute correlations ----------------
 print("\nSame-minute correlations:")
@@ -95,4 +99,4 @@ print(f"\nTransfer entropy, 1-minute returns, k={K}, {N_SHUFFLES} shuffles:")
 print(results.round(4))
 print("\nSignificant pairs (p < 0.05):")
 print(results[results["p"] < 0.05][["source", "target", "TE", "p"]].round(4))
-results.to_csv(f"te_shuffle_minute_k{K}.csv", index=False)
+results.to_csv(ROOT / "results" / "minute" / f"te_shuffle_minute_k{K}.csv", index=False)

@@ -3,7 +3,11 @@ import numpy as np
 import pandas as pd
 from PyIF import te_compute as te
 
-returns = pd.read_csv("returns_hourly_jittered.csv", index_col=0)
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parent.parent  # repository root
+
+returns = pd.read_csv(ROOT / "data" / "hourly" / "returns_hourly_jittered.csv", index_col=0)
 coins = list(returns.columns)
 rng = np.random.default_rng(0)
 n_shuffles = 100
@@ -26,4 +30,4 @@ for source, target in itertools.permutations(coins, 2):
 
 results = pd.DataFrame(rows)
 print(results.round(4))
-results.to_csv(f"te_shuffle{K}.csv", index=False)
+results.to_csv(ROOT / "results" / "hourly" / f"te_shuffle_k{K}.csv", index=False)
